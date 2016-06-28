@@ -3,43 +3,14 @@ package com.github.ericytsang.lib.delegates
 import java.util.WeakHashMap
 import kotlin.reflect.KProperty
 
-/**
- * Created by surpl on 5/5/2016.
- */
-class LazyWithReceiver<This,Return>(val initializer:(thisRef:This)->Return)
-{
-    private val rToState = WeakHashMap<This,State<This,Return>>()
-
-    operator fun getValue(thisRef:Any?,property:KProperty<*>):Return
+    class LazyWithReceiver<This,Return>(val initializer:This.()->Return)
     {
-        @Suppress("UNCHECKED_CAST","NAME_SHADOWING")
-        val thisRef = thisRef as This
-        val state = rToState.getOrPut(thisRef,{UninitializedState()})
-        return state.getValue(thisRef,property)
-    }
+        private val values = WeakHashMap<This,Return>()
 
-    interface State<This,Return>
-    {
-        fun getValue(thisRef:This, property:KProperty<*>):Return
-    }
-
-    private inner class UninitializedState:State<This,Return>
-    {
-        override fun getValue(thisRef:This,property:KProperty<*>):Return
+        @Suppress("UNCHECKED_CAST")
+        operator fun getValue(thisRef:Any,property:KProperty<*>):Return = synchronized(values)
         {
-            synchronized(this@LazyWithReceiver)
-            {
-                if (rToState[thisRef] === this)
-                {
-                    rToState[thisRef] = InitializedState(initializer(thisRef))
-                }
-            }
-            return this@LazyWithReceiver.getValue(thisRef,property)
+            thisRef as This
+            return values.getOrPut(thisRef) {thisRef.initializer()}
         }
     }
-
-    private inner class InitializedState(val value:Return):State<This,Return>
-    {
-        override fun getValue(thisRef:This,property:KProperty<*>):Return = value
-    }
-}
