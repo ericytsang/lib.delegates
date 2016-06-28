@@ -16,6 +16,19 @@ class LazyWithReceiverTest
         this * 2
     }
 
+    /**
+     * this test case should print the following:
+     * initializing!
+     * 8
+     * 8
+     * initializing!
+     * 10
+     * initializing!
+     * 12
+     * 8
+     * 10
+     * 12
+     */
     @Test
     fun test1()
     {
